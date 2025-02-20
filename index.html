@@ -5,32 +5,35 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
-		<link rel="modulepreload" href="./_app/immutable/entry/start.BKuOnRCO.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/G5j0zyf9.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/Ce_LYVoD.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CDeefaM5.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.BthpD_mV.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/Dttf4BoH.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/DT9xDJXp.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/BRocQdD-.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/FZ3rsrI9.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.l8dp4m2d.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.B6ryPezf.js">
+		<link href="./_app/immutable/assets/2.TmJGak1Q.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.BPUMORrV.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BwpjWrAo.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CCR6oj6N.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CxuClGhS.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.CswdIr80.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/tRa9irTd.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/B4Gdbx0_.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/KWiXXxW5.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/apz_SVJy.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.Bfk-At2H.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.DoFPV0JK.js">
+		<link rel="stylesheet" href="style/reset.css">
+		<link rel="stylesheet" href="style/global.css">
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents"><!--[--><!--[--><!----><!----><h1>Tilemap Generator</h1> <input type="file" name="import" id="import" accept="image/png" multiple> <!--[--><!--]--><!----><!----><!----><!----><!--]--> <!--[!--><!--]--><!--]-->
+		<div style="display: contents"><!--[--><!--[--><!----><!----><div id="outer-wrapper" class="svelte-1a6ydla"><h1 class="svelte-1a6ydla"><a href="https://github.com/hs-furtwangen/FUDGE" target="_blank" rel="noopener noreferrer">FUDGE</a> Tilemap Editor</h1> <div class="tabs svelte-1a6ydla"><div class="tab svelte-1a6ydla shown" id="tab-atlas"><h2 class="svelte-1a6ydla">Tile Atlas</h2> <div class="tab-content svelte-1a6ydla"><input type="file" name="import" id="import" accept="image/png" multiple> <div id="atlantes-wrapper"><!--[--><!--]--></div><!----></div></div> <div class="tab shown svelte-1a6ydla" id="tab-sheet"><h2 class="svelte-1a6ydla">Tile Sheet</h2> <div class="tab-content svelte-1a6ydla"></div></div> <div class="tab svelte-1a6ydla " id="tab-map"><h2 class="svelte-1a6ydla">Tile Map</h2> <div class="tab-content svelte-1a6ydla"><button>update</button> <canvas width="500" height="500"></canvas><!----></div></div></div></div><!----><!----><!----><!--]--> <!--[!--><!--]--><!--]-->
 			
 			<script>
 				{
-					__sveltekit_q0rnrk = {
+					__sveltekit_103uo5y = {
 						base: new URL(".", location).pathname.slice(0, -1)
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.BKuOnRCO.js"),
-						import("./_app/immutable/entry/app.BthpD_mV.js")
+						import("./_app/immutable/entry/start.BPUMORrV.js"),
+						import("./_app/immutable/entry/app.CswdIr80.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],
