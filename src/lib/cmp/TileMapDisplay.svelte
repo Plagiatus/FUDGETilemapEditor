@@ -11,6 +11,11 @@
     $effect(()=>{
         map.render(ctx);
     })
+
+    function update (){
+        map.render(ctx);
+    }
 </script>
 
+<button onclick={update}>update</button>
 <canvas bind:this={canvas} width="500" height="500"></canvas>

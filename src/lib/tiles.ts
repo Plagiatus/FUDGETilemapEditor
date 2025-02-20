@@ -67,15 +67,15 @@ export class TileAtlas {
 
     }
 
-    getTilePosition(index: number): { x: number, y: number, dx: number, dy: number };
-    getTilePosition(tile: TileBasic): { x: number, y: number, dx: number, dy: number };
-    getTilePosition(indexOrTile: number | TileBasic): { x: number, y: number, dx: number, dy: number } {
+    getTilePosition(index: number): { x: number, y: number, w: number, h: number };
+    getTilePosition(tile: TileBasic): { x: number, y: number, w: number, h: number };
+    getTilePosition(indexOrTile: number | TileBasic): { x: number, y: number, w: number, h: number } {
         let index = typeof indexOrTile === "number" ? indexOrTile : indexOrTile.indexInAtlas;
         return {
             x: this.#settings.startOffset.x + (this.#settings.tileSize.x + this.#settings.tileGap.x) * (index % this.#tileAmount.x),
             y: this.#settings.startOffset.y + (this.settings.tileSize.y + this.settings.tileGap.y) * Math.floor(index / this.#tileAmount.x),
-            dx: this.#settings.tileSize.x,
-            dy: this.#settings.tileSize.y,
+            w: this.#settings.tileSize.x,
+            h: this.#settings.tileSize.y,
         }
     }
 
@@ -143,17 +143,27 @@ export class TileMap {
     #tileIndex: Map<number, Tile> = new Map();
     #atlantes: Map<string, TileAtlas> = new Map();
     #renderMethods: Map<string, RenderMethod> = new Map();
-    constructor(mapSize: Vector2, tileSize: Vector2, tiles: Tile[], atlates: TileAtlas[], tilesInMap: number[]) {
+    constructor(mapSize: Vector2, tileSize: Vector2, atlantes: TileAtlas[], tilesInMap: number[]) {
         this.#mapSize = mapSize;
         this.#tileSize = tileSize;
         this.#tiles = tilesInMap;
 
-        tiles.forEach(t => {
-            this.#tileIndex.set(t.id, t);
-        });
-        atlates.forEach(a => this.#atlantes.set(a.id, a));
+        this.setAtlantes(atlantes);
 
         this.#renderMethods.set("basic", this.drawBasicTile)
+    }
+
+    setAtlantes(atlantes: TileAtlas[]) {
+        for(let atlas of atlantes){
+            this.#atlantes.set(atlas.id, atlas);
+        }
+        this.#tileIndex.clear();
+        let tileId = 1;
+        for(let atlas of this.#atlantes.values()){
+            let tiles = atlas.createTiles(tileId);
+            tileId += tiles.length;
+            tiles.forEach(t => this.#tileIndex.set(t.id, t));
+        }
     }
 
     async loadAtlantes() {
@@ -165,12 +175,14 @@ export class TileMap {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
+        ctx.imageSmoothingEnabled = false;
         for (let col: number = 0; col < this.#mapSize.x; col++) {
-            for (let row: number = 0; row < this.#mapSize.x; row++) {
+            for (let row: number = 0; row < this.#mapSize.y; row++) {
                 const tile = this.getTile(col, row);
                 if (!tile) continue;
                 if (tile.type == "basic") {
-                    this.drawBasicTile(ctx, tile, row, col);
+                    // this.drawBasicTile(ctx, tile, row, col);
+                    this.#renderMethods.get("basic")!.call(this, ctx, tile, row, col);
                 }
                 else if (tile.type === "rule") {
 
@@ -192,13 +204,14 @@ export class TileMap {
 
     private drawBasicTile(ctx: CanvasRenderingContext2D, tile: TileBasic, row: number, col: number) {
         const atlas = this.#atlantes.get(tile.atlasId)!;
+        let {x, y, w, h} = atlas.getTilePosition(tile.indexInAtlas);
 
         ctx.drawImage(
             atlas.img!,
-            atlas.settings.startOffset.x + (atlas.settings.tileSize.x + atlas.settings.tileGap.x) * tile.indexInAtlas,
-            atlas.settings.startOffset.y, // + atlas.settings.tileSize.y * atlas.settings.tileGap.y * Math.floor(tile.indexInAtlas / atlas),
-            atlas.settings.tileSize.x,
-            atlas.settings.tileSize.y,
+            x,
+            y,
+            w,
+            h,
             this.#tileSize.x * col,
             this.#tileSize.y * row,
             this.#tileSize.x,

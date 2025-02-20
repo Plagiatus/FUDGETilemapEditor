@@ -39,6 +39,8 @@
     multiple
 />
 
-{#each atlantes as atlas}
+<div id="atlantes-wrapper">
+    {#each atlantes as atlas}
     <Atlas {atlas} />
-{/each}
+    {/each}
+</div>
