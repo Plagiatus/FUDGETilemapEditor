@@ -34,6 +34,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>FUDGE Tilemap Editor</title>
+</svelte:head>
+
 <div id="outer-wrapper">
     <h1>
         <a
