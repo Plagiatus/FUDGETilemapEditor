@@ -3,7 +3,7 @@
     import Atlas from "./Atlas.svelte";
 
     let fileInput: HTMLInputElement;
-    let { atlantes = $bindable([]), activeAtlas = $bindable() }: { atlantes: TileAtlas[], activeAtlas: TileAtlas } = $props();
+    let { atlantes = $bindable([]), activeAtlas = $bindable() }: { atlantes: TileAtlas[], activeAtlas: TileAtlas | undefined } = $props();
 
     async function load(ev: Event) {
         if (!fileInput.files) return;

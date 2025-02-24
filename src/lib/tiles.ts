@@ -10,6 +10,7 @@ export interface Vector2 {
 
 export class TileAtlas {
     static existingIDs: Set<string> = new Set();
+    static selectedTiles: Set<Tile> = new Set();
     #settings: TileImageSettings;
     #id: string;
     #src: string;
@@ -17,6 +18,7 @@ export class TileAtlas {
     #imgLoading?: Promise<void>;
     #dimensions: Vector2 = { x: 0, y: 0 };
     #tileAmount: Vector2 = { x: 0, y: 0 };
+    #tiles: TileBasic[] | undefined;
 
     constructor(src: string, settings: Partial<TileImageSettings> = {}, id: string = src) {
         if (TileAtlas.existingIDs.has(id)) { throw Error("A Tile Atlas with this ID already exists.") }
@@ -79,7 +81,8 @@ export class TileAtlas {
         }
     }
 
-    createTiles(startId: number): TileBasic[] {
+    createTiles(): TileBasic[] {
+        let startId: number = 0;
         let atlasId: number = 0;
         const tiles: TileBasic[] = [];
         let countX = 0, countY = 0;
@@ -99,7 +102,13 @@ export class TileAtlas {
         }
         this.#tileAmount.x = countX;
         this.#tileAmount.y = countY;
+        this.#tiles = [...tiles];
         return tiles;
+    }
+
+    getTiles(): TileBasic[] {
+        if (!this.#tiles) this.createTiles();
+        return this.#tiles!;
     }
 }
 
@@ -109,7 +118,7 @@ export interface TileImageSettings {
     tileSize: Vector2,
 }
 
-type Tile = TileRule | TileBasic;
+export type Tile = TileRule | TileBasic;
 
 export interface TileBase {
     type: string,
@@ -134,44 +143,67 @@ export interface TileRuleRule {
     random?: TileBasic[]
 }
 
+export class TileSheet {
+    #tiles: Tile[][] = [];
+    #mapSize: Vector2 = { x: 20, y: 20 };
+    #tileSize: Vector2 = { x: 64, y: 64 };
+
+    constructor(mapSize: Vector2, tileSize: Vector2) {
+        this.mapSize = mapSize;
+        this.tileSize = tileSize;
+    }
+
+    get mapSize() {
+        return this.#mapSize;
+    }
+    set mapSize(size: Vector2) {
+        this.#mapSize = size;
+    }
+    get tileSize() {
+        return this.#tileSize;
+    }
+    set tileSize(size: Vector2) {
+        this.#tileSize = size;
+    }
+
+    setTile(tile: Tile, pos: Vector2) {
+        if (!this.#tiles[pos.y]) {
+            this.#tiles[pos.y] = [];
+        }
+        this.#tiles[pos.y][pos.x] = tile;
+    }
+
+    render(ctx: CanvasRenderingContext2D) {
+        ctx.imageSmoothingEnabled = false;
+        for (let y: number = 0; y < this.#mapSize.y; y++) {
+            for (let x: number = 0; x < this.#mapSize.x; x++) {
+                const tile = this.getTile({ x, y });
+                if (!tile) continue;
+                TileRenderer.drawTile(tile, ctx, { x: this.#tileSize.x * x, y: this.#tileSize.y * y }, this.#tileSize);
+            }
+        }
+    }
+
+    getTile(pos: Vector2): Tile | undefined {
+        return this.#tiles[pos.y]?.[pos.x];
+    }
+}
+
 type RenderMethod = <T extends TileBase>(ctx: CanvasRenderingContext2D, tile: T, row: number, col: number) => void;
 
 export class TileMap {
     #mapSize: Vector2;
     #tileSize: Vector2;
-    #tiles: number[];
-    #tileIndex: Map<number, Tile> = new Map();
-    #atlantes: Map<string, TileAtlas> = new Map();
-    #renderMethods: Map<string, RenderMethod> = new Map();
-    constructor(mapSize: Vector2, tileSize: Vector2, atlantes: TileAtlas[], tilesInMap: number[]) {
+    #tiles: Tile[];
+    constructor(mapSize: Vector2, tileSize: Vector2, tilesInMap: (Tile | number)[]) {
         this.#mapSize = mapSize;
         this.#tileSize = tileSize;
-        this.#tiles = tilesInMap;
-
-        this.setAtlantes(atlantes);
-
-        this.#renderMethods.set("basic", this.drawBasicTile)
-    }
-
-    setAtlantes(atlantes: TileAtlas[]) {
-        for(let atlas of atlantes){
-            this.#atlantes.set(atlas.id, atlas);
-        }
-        this.#tileIndex.clear();
-        let tileId = 1;
-        for(let atlas of this.#atlantes.values()){
-            let tiles = atlas.createTiles(tileId);
-            tileId += tiles.length;
-            tiles.forEach(t => this.#tileIndex.set(t.id, t));
-        }
-    }
-
-    async loadAtlantes() {
-        const promises: Promise<void>[] = [];
-        for (let atlas of this.#atlantes.values()) {
-            promises.push(atlas.loadImg());
-        }
-        await Promise.all(promises);
+        this.#tiles = tilesInMap.map(tim => {
+            if (typeof tim === "number") {
+                return TileRenderer.getTile(tim)!;
+            }
+            return tim;
+        });
     }
 
     public render(ctx: CanvasRenderingContext2D) {
@@ -180,42 +212,85 @@ export class TileMap {
             for (let row: number = 0; row < this.#mapSize.y; row++) {
                 const tile = this.getTile(col, row);
                 if (!tile) continue;
-                if (tile.type == "basic") {
-                    // this.drawBasicTile(ctx, tile, row, col);
-                    this.#renderMethods.get("basic")!.call(this, ctx, tile, row, col);
-                }
-                else if (tile.type === "rule") {
-
-                }
+                TileRenderer.drawTile(tile, ctx, { x: this.#tileSize.x * col, y: this.#tileSize.y * col }, this.#tileSize);
             }
 
         }
     }
 
     getTile(column: number, row: number): Tile | undefined {
-        return this.#tileIndex.get(this.#tiles[row * this.#mapSize.x + column]);
+        return this.#tiles[row * this.#mapSize.x + column];
     }
 
-    setTile(column: number, row: number, tile: Tile | number) {
-        let index = typeof tile === "number" ? tile : tile.id;
-        this.#tiles[row * this.#mapSize.x + column] = index;
+    setTile(column: number, row: number, tile: Tile) {
+        this.#tiles[row * this.#mapSize.x + column] = tile;
+    }
+}
+
+export class TileRenderer {
+    static renderMethod: Map<string, Function> = new Map();
+    static atlantes: Map<string, TileAtlas> = new Map();
+    private static tileIndex: Map<number, Tile> = new Map();
+    
+    private constructor() {
+        if (TileRenderer.Instance) return TileRenderer.Instance;
+        TileRenderer.renderMethod.set("basic", TileRenderer.drawBasicTile);
+        TileRenderer.renderMethod.set("rule", TileRenderer.drawRuleTile);
+    }
+    public static setAtlantes(atlantes: TileAtlas[]) {
+        for (const atlas of atlantes) {
+            this.atlantes.set(atlas.id, atlas);
+        }
+        let tileNumber = 1;
+        const newTileIndex: Map<number, Tile> = new Map();
+        for (let atlas of this.atlantes.values()) {
+            const tiles = atlas.getTiles();
+            tiles.forEach(t => {
+                t.id = tileNumber++;
+                newTileIndex.set(t.id, t);
+            });
+        }
+        for (let tile of this.tileIndex.values()) {
+            if (tile.type !== "basic") {
+                newTileIndex.set(tile.id, tile);
+            }
+        }
+        this.tileIndex = newTileIndex;
     }
 
-
-    private drawBasicTile(ctx: CanvasRenderingContext2D, tile: TileBasic, row: number, col: number) {
-        const atlas = this.#atlantes.get(tile.atlasId)!;
-        let {x, y, w, h} = atlas.getTilePosition(tile.indexInAtlas);
-
+    public static getTile(id: number): Tile | undefined {
+        return this.tileIndex.get(id);
+    }
+    
+    public static drawTile(t: Tile | number, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
+        if (typeof t === "number") {
+            t = this.tileIndex.get(t)!;
+        }
+        if (!t) return;
+        
+        if (!TileRenderer.renderMethod.has(t.type)) {
+            throw new Error(`Cannot draw tile type "${t.type}": No known renderer.`);
+        }
+        TileRenderer.renderMethod.get(t.type)?.(t, ctx, pos, size);
+    }
+    
+    protected static drawBasicTile = (t: TileBasic, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) => {
+        const atlas = this.atlantes.get(t.atlasId);
+        if (!atlas) throw new Error(`Atlas "${t.atlasId}" not found.`);
+        let { x, y, w, h } = atlas.getTilePosition(t.indexInAtlas);
+        
         ctx.drawImage(
             atlas.img!,
             x,
             y,
             w,
             h,
-            this.#tileSize.x * col,
-            this.#tileSize.y * row,
-            this.#tileSize.x,
-            this.#tileSize.y,
+            pos.x,
+            pos.y,
+            size.x,
+            size.y,
         )
     }
+    protected static drawRuleTile(t: TileRule, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) { }
+    private static Instance = new TileRenderer();
 }

@@ -1,7 +1,15 @@
 <script lang="ts">
-    import type { TileAtlas, TileBasic, Vector2 } from "$lib/tiles";
+    import { TileAtlas, type TileBasic, type Vector2 } from "$lib/tiles";
 
-    let { atlas = $bindable(), activate, active }: { atlas: TileAtlas, activate: (atlas: TileAtlas)=>void, active: boolean} = $props();
+    let {
+        atlas = $bindable(),
+        activate,
+        active,
+    }: {
+        atlas: TileAtlas;
+        activate: (atlas: TileAtlas) => void;
+        active: boolean;
+    } = $props();
 
     let canvasBase: HTMLCanvasElement;
     let canvasOverlay: HTMLCanvasElement;
@@ -16,7 +24,11 @@
     let showLines: boolean = $state(true);
 
     $effect(() => {
-        wrapper.addEventListener("click", ()=>{activate(atlas);})
+        wrapper.addEventListener("click", () => {
+            activate(atlas);
+            TileAtlas.selectedTiles.clear();
+            selectedTiles.forEach((t) => TileAtlas.selectedTiles.add(t));
+        });
 
         canvasOverlay.addEventListener("pointermove", pointermove);
         canvasOverlay.addEventListener("pointerleave", pointerleave);
@@ -36,7 +48,7 @@
         ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
         ctx.textAlign = "right";
 
-        tiles = atlas.createTiles(1);
+        tiles = atlas.createTiles();
 
         for (let tile of tiles) {
             let { x, y, w, h } = atlas.getTilePosition(tile);
@@ -68,8 +80,12 @@
                 selectedTiles.add(tile);
             }
         } else {
-            selectedTiles.clear();
-            selectedTiles.add(tile);
+            if (selectedTiles.has(tile) && selectedTiles.size === 1) {
+                selectedTiles.clear();
+            } else {
+                selectedTiles.clear();
+                selectedTiles.add(tile);
+            }
         }
         drawOverlayCanvas();
     }
@@ -112,7 +128,7 @@
     }
 </script>
 
-<fieldset class="atlas-display" class:active={active} bind:this={wrapper}>
+<fieldset class="atlas-display" class:active bind:this={wrapper}>
     <img class="img-preview" src={atlas.src} alt="" />
     <div class="canvas-wrapper">
         <canvas
@@ -212,7 +228,7 @@
     .atlas-display.active > .img-preview {
         display: none;
     }
-    .atlas-display:not(.active){
+    .atlas-display:not(.active) {
         cursor: pointer;
     }
     .img-preview {

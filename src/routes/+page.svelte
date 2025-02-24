@@ -1,12 +1,15 @@
 <script lang="ts">
     import AtlasImport from "$lib/cmp/AtlasImport.svelte";
+    import Sheet from "$lib/cmp/Sheet.svelte";
     import TileMapDisplay from "$lib/cmp/TileMapDisplay.svelte";
-    import { TileAtlas, TileMap } from "$lib/tiles";
+    import { TileAtlas, TileMap, TileRenderer, TileSheet } from "$lib/tiles";
     let atlantes: TileAtlas[] = $state([]);
 
     let atlasTab: HTMLDivElement;
     let atlasTabVisible: boolean = $state(true);
     let mapTab: HTMLDivElement;
+    let activeAtlas: TileAtlas | undefined = $state();
+    let tileSheet: TileSheet | undefined = $state();
 
     $effect(() => {
         atlasTab.addEventListener("pointerup", () => {
@@ -19,7 +22,6 @@
     let map = new TileMap(
         { x: 5, y: 5 },
         { x: 64, y: 64 },
-        [],
         [
             1, 2, 2, 2, 3,
             9, 10, 10, 10, 11,
@@ -30,7 +32,7 @@
     );
 
     $effect(()=>{
-        map.setAtlantes(atlantes);
+        TileRenderer.setAtlantes(atlantes);
     })
 </script>
 
@@ -55,13 +57,13 @@
         >
             <h2>Tile Atlas</h2>
             <div class="tab-content">
-                <AtlasImport bind:atlantes />
+                <AtlasImport bind:atlantes bind:activeAtlas/>
             </div>
         </div>
         <div class="tab shown" id="tab-sheet">
             <h2>Tile Sheet</h2>
             <div class="tab-content">
-                <!-- Tile Sheet -->
+                <Sheet sheet={tileSheet} selectedAtlas={activeAtlas}/>
             </div>
         </div>
         <div
@@ -109,6 +111,7 @@
     .tab-content {
         scale: 1;
         transition: scale 0.2s ease;
+        min-height: 100%;
     }
     .tab:not(.shown) h2 {
         writing-mode: vertical-lr;
