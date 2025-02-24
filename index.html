@@ -5,35 +5,34 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
-		<link href="./_app/immutable/assets/2.ClP4g7Wt.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.DSLwzIpF.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/B9iZnF1b.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CbumMmjs.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CuAyAQA-.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.DdhFm14N.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CFMapfpf.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/DrCbz4V6.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CAqvofdj.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/Bd0Ut62N.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0._Lh1fmbM.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.Be0_psYn.js"><!--[--><!--]--><title>FUDGE Tilemap Editor</title>
+		<link href="./_app/immutable/assets/2.CD2KfsQl.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.BPpf72k6.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DWfigKtV.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BnvAo4G9.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BhwMF_Sa.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.Byns0opK.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/C8RjIbxM.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CfyfeUdA.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BonAO-cW.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.DgP5m2t_.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.CE8EsbTB.js"><!--[--><!--]--><title>FUDGE Tilemap Editor</title>
 		<link rel="stylesheet" href="style/reset.css">
 		<link rel="stylesheet" href="style/global.css">
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents"><!--[--><!--[--><!----><!----><div id="outer-wrapper" class="svelte-1a6ydla"><h1 class="svelte-1a6ydla"><a href="https://github.com/hs-furtwangen/FUDGE" target="_blank" rel="noopener noreferrer">FUDGE</a> Tilemap Editor</h1> <div class="tabs svelte-1a6ydla"><div class="tab svelte-1a6ydla shown" id="tab-atlas"><h2 class="svelte-1a6ydla">Tile Atlas</h2> <div class="tab-content svelte-1a6ydla"><input type="file" name="import" id="import" accept="image/png" multiple> <div id="atlantes-wrapper"><!--[--><!--]--></div><!----></div></div> <div class="tab shown svelte-1a6ydla" id="tab-sheet"><h2 class="svelte-1a6ydla">Tile Sheet</h2> <div class="tab-content svelte-1a6ydla"></div></div> <div class="tab svelte-1a6ydla " id="tab-map"><h2 class="svelte-1a6ydla">Tile Map</h2> <div class="tab-content svelte-1a6ydla"><button>update</button> <canvas width="500" height="500"></canvas><!----></div></div></div></div><!----><!----><!----><!--]--> <!--[!--><!--]--><!--]-->
+		<div style="display: contents"><!--[--><!--[--><!----><!----><div id="outer-wrapper" class="svelte-1m8kp7h"><h1 class="svelte-1m8kp7h"><a href="https://github.com/hs-furtwangen/FUDGE" target="_blank" rel="noopener noreferrer">FUDGE</a> Tilemap Editor</h1> <div class="tabs svelte-1m8kp7h"><div class="tab svelte-1m8kp7h shown" id="tab-atlas"><h2 class="svelte-1m8kp7h">Tile Atlas</h2> <div class="tab-content svelte-1m8kp7h"><input type="file" name="import" id="import" accept="image/png" multiple> <div id="atlantes-wrapper"><!--[--><!--]--></div><!----></div></div> <div class="tab shown svelte-1m8kp7h" id="tab-sheet"><h2 class="svelte-1m8kp7h">Tile Sheet</h2> <div class="tab-content svelte-1m8kp7h"><div id="sheet-wrapper" class="svelte-15zap0v"><fieldset><fieldset><legend>Tile Size</legend> <label>width<input type="number" value="16" min="0"></label> <label>height<input type="number" value="16" min="0"></label></fieldset> <fieldset><legend>Sheet Size</legend> <label>width<input type="number" value="20" min="0"></label> <label>height<input type="number" value="20" min="0"></label></fieldset> <fieldset><legend>Display Settings</legend> <label>show lines <input type="checkbox" checked></label></fieldset></fieldset> <canvas id="sheet-canvas" class="svelte-15zap0v"></canvas> <!--[!--><!--]--></div><!----></div></div> <div class="tab svelte-1m8kp7h " id="tab-map"><h2 class="svelte-1m8kp7h">Tile Map</h2> <div class="tab-content svelte-1m8kp7h"><button>update</button> <canvas width="500" height="500"></canvas><!----></div></div></div></div><!----><!----><!----><!--]--> <!--[!--><!--]--><!--]-->
 			
 			<script>
 				{
-					__sveltekit_1aefltd = {
+					__sveltekit_1bjlihj = {
 						base: new URL(".", location).pathname.slice(0, -1)
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.DSLwzIpF.js"),
-						import("./_app/immutable/entry/app.DdhFm14N.js")
+						import("./_app/immutable/entry/start.BPpf72k6.js"),
+						import("./_app/immutable/entry/app.Byns0opK.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],
