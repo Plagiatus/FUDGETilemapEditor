@@ -26,8 +26,7 @@
     $effect(() => {
         wrapper.addEventListener("click", () => {
             activate(atlas);
-            TileAtlas.selectedTiles.clear();
-            selectedTiles.forEach((t) => TileAtlas.selectedTiles.add(t));
+            updateSelectedTiles();
         });
 
         canvasOverlay.addEventListener("pointermove", pointermove);
@@ -39,6 +38,37 @@
         );
         ctxOverlay = canvasOverlay.getContext("2d")!;
     });
+
+    function updateSelectedTiles() {
+        if (selectedTiles.size == 0) {
+            TileAtlas.selectedTiles = [];
+            return;
+        }
+        const tileAmount = atlas.tileAmount;
+        const min: Vector2 = { x: Infinity, y: Infinity };
+        const max: Vector2 = { x: -Infinity, y: -Infinity };
+        selectedTiles.forEach((t) => {
+            const pos: Vector2 = {
+                x: t.indexInAtlas % tileAmount.x,
+                y: Math.floor(t.indexInAtlas / tileAmount.x),
+            };
+            if (min.x > pos.x) min.x = pos.x;
+            if (min.y > pos.y) min.y = pos.y;
+            if (max.x < pos.x) max.x = pos.x;
+            if (max.y < pos.y) max.y = pos.y;
+        });
+        TileAtlas.selectedTiles = Array.from(
+            { length: max.y - min.y + 1 },
+            () => [],
+        );
+        selectedTiles.forEach((t) => {
+            const pos: Vector2 = {
+                x: (t.indexInAtlas % tileAmount.x) - min.x,
+                y: Math.floor(t.indexInAtlas / tileAmount.x) - min.y,
+            };
+            TileAtlas.selectedTiles[pos.y][pos.x] = t;
+        });
+    }
 
     $effect(() => {
         const ctx = canvasBase.getContext("2d")!;
@@ -88,6 +118,7 @@
             }
         }
         drawOverlayCanvas();
+        updateSelectedTiles();
     }
 
     function drawOverlayCanvas() {

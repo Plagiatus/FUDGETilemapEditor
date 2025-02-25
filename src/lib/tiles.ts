@@ -10,7 +10,7 @@ export interface Vector2 {
 
 export class TileAtlas {
     static existingIDs: Set<string> = new Set();
-    static selectedTiles: Set<Tile> = new Set();
+    static selectedTiles: Tile[][] = [];
     #settings: TileImageSettings;
     #id: string;
     #src: string;
@@ -56,6 +56,10 @@ export class TileAtlas {
 
     get dimensions() {
         return structuredClone(this.#dimensions);
+    }
+
+    get tileAmount() {
+        return structuredClone(this.#tileAmount);
     }
 
     get settings() {
@@ -144,7 +148,7 @@ export interface TileRuleRule {
 }
 
 export class TileSheet {
-    #tiles: Tile[][] = [];
+    #tiles: (Tile | undefined)[][] = [];
     #mapSize: Vector2 = { x: 20, y: 20 };
     #tileSize: Vector2 = { x: 64, y: 64 };
 
@@ -166,7 +170,7 @@ export class TileSheet {
         this.#tileSize = size;
     }
 
-    setTile(tile: Tile, pos: Vector2) {
+    setTile(tile: Tile | undefined, pos: Vector2) {
         if (!this.#tiles[pos.y]) {
             this.#tiles[pos.y] = [];
         }
@@ -231,7 +235,7 @@ export class TileRenderer {
     static renderMethod: Map<string, Function> = new Map();
     static atlantes: Map<string, TileAtlas> = new Map();
     private static tileIndex: Map<number, Tile> = new Map();
-    
+
     private constructor() {
         if (TileRenderer.Instance) return TileRenderer.Instance;
         TileRenderer.renderMethod.set("basic", TileRenderer.drawBasicTile);
@@ -241,6 +245,10 @@ export class TileRenderer {
         for (const atlas of atlantes) {
             this.atlantes.set(atlas.id, atlas);
         }
+        this.recalculateTileIds();
+    }
+    
+    private static recalculateTileIds(){
         let tileNumber = 1;
         const newTileIndex: Map<number, Tile> = new Map();
         for (let atlas of this.atlantes.values()) {
@@ -252,33 +260,57 @@ export class TileRenderer {
         }
         for (let tile of this.tileIndex.values()) {
             if (tile.type !== "basic") {
+                tile.id = newTileIndex.size + 1;
                 newTileIndex.set(tile.id, tile);
             }
         }
         this.tileIndex = newTileIndex;
     }
 
+    public static addTile(tile: Tile) {
+        this.tileIndex.set(tile.id, tile);
+    }
+
+    public static newTile(type: "rule", name: string = ""): Tile {
+        this.recalculateTileIds();
+        let id: number = this.tileIndex.size;
+        while (this.tileIndex.has(id)) {
+            id++;
+        }
+
+        let tile: Tile = {
+            type,
+            default: undefined!,
+            id,
+            name,
+            rules: [],
+        }
+        this.addTile(tile);
+        return tile;
+    }
+
+
     public static getTile(id: number): Tile | undefined {
         return this.tileIndex.get(id);
     }
-    
+
     public static drawTile(t: Tile | number, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
         if (typeof t === "number") {
             t = this.tileIndex.get(t)!;
         }
         if (!t) return;
-        
+
         if (!TileRenderer.renderMethod.has(t.type)) {
             throw new Error(`Cannot draw tile type "${t.type}": No known renderer.`);
         }
         TileRenderer.renderMethod.get(t.type)?.(t, ctx, pos, size);
     }
-    
+
     protected static drawBasicTile = (t: TileBasic, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) => {
         const atlas = this.atlantes.get(t.atlasId);
         if (!atlas) throw new Error(`Atlas "${t.atlasId}" not found.`);
         let { x, y, w, h } = atlas.getTilePosition(t.indexInAtlas);
-        
+
         ctx.drawImage(
             atlas.img!,
             x,
