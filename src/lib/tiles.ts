@@ -86,6 +86,7 @@ export class TileAtlas {
     }
 
     createTiles(): TileBasic[] {
+        if (this.#settings.tileSize.x < 1 || this.#settings.tileSize.y < 1) return [];
         let startId: number = 0;
         let atlasId: number = 0;
         const tiles: TileBasic[] = [];
@@ -247,8 +248,8 @@ export class TileRenderer {
         }
         this.recalculateTileIds();
     }
-    
-    private static recalculateTileIds(){
+
+    private static recalculateTileIds() {
         let tileNumber = 1;
         const newTileIndex: Map<number, Tile> = new Map();
         for (let atlas of this.atlantes.values()) {

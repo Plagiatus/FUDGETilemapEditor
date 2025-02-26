@@ -17,7 +17,7 @@
             const atlas = new TileAtlas(
                 imgData,
                 settings,
-                Math.random().toString(),
+                file.name,
             );
             await atlas.loadImg();
             atlantes.push(atlas);

@@ -118,17 +118,17 @@
     }
 
     #tab-atlas {
-        background-color: #f8f3d9;
+        background-color: var(--color-1);
     }
     #tab-sheet {
-        background-color: #ebe5c2;
+        background-color: var(--color-2);
     }
     #tab-map {
-        background-color: #b9b28a;
+        background-color: var(--color-3);
     }
     h1 {
-        color: #f8f3d9;
-        background-color: #504b38;
+        color: var(--color-1);
+        background-color: var(--color-4);
         padding: 0.2em;
         text-align: center;
     }

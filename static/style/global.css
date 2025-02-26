@@ -1,5 +1,9 @@
 body {
-    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    --color-1: #F8F3D9;
+    --color-2: #EBE5C2;
+    --color-3: #B9B28A;
+    --color-4: #504B38;
 }
 
 a {

@@ -1,5 +1,10 @@
 <script lang="ts">
+    import {
+        CanvasController,
+        type CanvasControllerPointerEvent,
+    } from "$lib/CanvasController";
     import { TileAtlas, type TileBasic, type Vector2 } from "$lib/tiles";
+    import { onMount } from "svelte";
 
     let {
         atlas = $bindable(),
@@ -11,38 +16,53 @@
         active: boolean;
     } = $props();
 
+    let wrapperCanvas: HTMLDivElement;
     let canvasBase: HTMLCanvasElement;
     let canvasOverlay: HTMLCanvasElement;
-    let wrapper: HTMLFieldSetElement;
+    let wrapperAtlas: HTMLFieldSetElement;
     let ctxOverlay: CanvasRenderingContext2D;
+    let ctxBase: CanvasRenderingContext2D;
+    let controller: CanvasController;
 
     let tiles: TileBasic[] = [];
     let selectedTiles: Set<TileBasic> = new Set<TileBasic>();
     let hoveredTile: TileBasic | undefined;
 
-    let showNumbers: boolean = $state(true);
+    let showNumbers: boolean = $state(false);
     let showLines: boolean = $state(true);
 
-    $effect(() => {
-        wrapper.addEventListener("click", () => {
+    onMount(() => {
+        wrapperAtlas.addEventListener("click", () => {
             activate(atlas);
             updateSelectedTiles();
         });
 
-        canvasOverlay.addEventListener("pointermove", pointermove);
+        controller = new CanvasController(canvasOverlay);
+
+        controller.addEventListener("draw", draw);
+        //@ts-expect-error
+        controller.addEventListener("pointermove", pointermove);
+        //@ts-expect-error
+        controller.addEventListener("pointerup", pointerup);
         canvasOverlay.addEventListener("pointerleave", pointerleave);
-        canvasOverlay.addEventListener("pointerup", pointerup);
-        // canvasOverlay.addEventListener("pointerdown", pointerdown);
-        canvasOverlay.addEventListener("contextmenu", (e) =>
-            e.preventDefault(),
-        );
+
         ctxOverlay = canvasOverlay.getContext("2d")!;
+        ctxBase = canvasBase.getContext("2d")!;
+        controller.addCtxToSync(ctxBase);
+
+        const rect = wrapperCanvas.getBoundingClientRect();
+        canvasBase.width = rect.width;
+        canvasBase.height = rect.height;
+        canvasOverlay.width = rect.width;
+        canvasOverlay.height = rect.height;
+
+        controller.draw();
     });
 
     function updateSelectedTiles() {
         if (selectedTiles.size == 0) {
             TileAtlas.selectedTiles = [];
-            return;
+            return controller.draw();
         }
         const tileAmount = atlas.tileAmount;
         const min: Vector2 = { x: Infinity, y: Infinity };
@@ -68,42 +88,49 @@
             };
             TileAtlas.selectedTiles[pos.y][pos.x] = t;
         });
+
+        controller.draw();
     }
 
-    $effect(() => {
-        const ctx = canvasBase.getContext("2d")!;
-        ctx.clearRect(0, 0, canvasBase.width, canvasBase.height);
-        ctx.drawImage(atlas.img!, 0, 0);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.textAlign = "right";
+    function draw() {
+        ctxBase.imageSmoothingEnabled = false;
+        ctxBase.drawImage(atlas.img!, 0, 0);
+        ctxBase.lineWidth = 1;
+        ctxBase.strokeStyle = "rgba(0, 0, 0, 0.5)";
+        ctxBase.textAlign = "right";
 
-        tiles = atlas.createTiles();
+        tiles = atlas.getTiles();
 
         for (let tile of tiles) {
             let { x, y, w, h } = atlas.getTilePosition(tile);
-            if (showLines) ctx.strokeRect(x, y, w, h);
+            if (showLines) ctxBase.strokeRect(x, y, w, h);
             if (showNumbers)
-                ctx.fillText(tile.id.toString(), x + w - 1, y + h - 1, w);
+                ctxBase.fillText(tile.id.toString(), x + w - 1, y + h - 1, w);
         }
-    });
 
-    function pointermove(_e: PointerEvent) {
-        const tile = getTileFromPointerEvent(_e);
+        drawOverlayCanvas();
+    }
+
+    function pointermove(_e: CustomEvent<CanvasControllerPointerEvent>) {
+        const tile = findTileAtPosition(_e.detail.pos.x, _e.detail.pos.y);
         if (!tile) return pointerleave();
         hoveredTile = tile;
-        drawOverlayCanvas();
+        controller.draw();
     }
 
     function pointerleave() {
         hoveredTile = undefined;
-        drawOverlayCanvas();
+        controller.draw();
     }
 
-    function pointerup(_e: PointerEvent) {
-        const tile = getTileFromPointerEvent(_e);
-        if (!tile) return;
-        if (_e.ctrlKey) {
+    function pointerup(_e: CustomEvent<CanvasControllerPointerEvent>) {
+        if (_e.detail.event.button !== 0) return;
+        const tile = findTileAtPosition(_e.detail.pos.x, _e.detail.pos.y);
+        if (!tile) {
+            selectedTiles.clear();
+            return updateSelectedTiles();
+        }
+        if (_e.detail.event.ctrlKey) {
             if (selectedTiles.has(tile)) {
                 selectedTiles.delete(tile);
             } else {
@@ -117,12 +144,10 @@
                 selectedTiles.add(tile);
             }
         }
-        drawOverlayCanvas();
         updateSelectedTiles();
     }
 
     function drawOverlayCanvas() {
-        ctxOverlay.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
         if (hoveredTile) {
             ctxOverlay.fillStyle = "rgba(255, 255, 255, 0.5)";
             let { x, y, w, h } = atlas.getTilePosition(hoveredTile);
@@ -130,19 +155,12 @@
         }
         for (let tile of selectedTiles.values()) {
             ctxOverlay.strokeStyle = "rgba(255, 0, 0, 1)";
+            ctxOverlay.fillStyle = "rgba(255, 0, 0, 0.25)";
             ctxOverlay.lineWidth = 1;
             let { x, y, w, h } = atlas.getTilePosition(tile);
+            ctxOverlay.fillRect(x, y, w, h);
             ctxOverlay.strokeRect(x, y, w, h);
         }
-    }
-
-    function getTileFromPointerEvent(
-        event: PointerEvent,
-    ): TileBasic | undefined {
-        const rect = canvasOverlay.getBoundingClientRect();
-        const posX = event.clientX - rect.left;
-        const posY = event.clientY - rect.top;
-        return findTileAtPosition(posX, posY);
     }
 
     function findTileAtPosition(
@@ -159,20 +177,11 @@
     }
 </script>
 
-<fieldset class="atlas-display" class:active bind:this={wrapper}>
+<fieldset class="atlas-display" class:active bind:this={wrapperAtlas}>
     <img class="img-preview" src={atlas.src} alt="" />
-    <div class="canvas-wrapper">
-        <canvas
-            width={atlas.img!.naturalWidth}
-            height={atlas.img!.naturalHeight}
-            bind:this={canvasBase}
-        ></canvas>
-        <canvas
-            class="canvas-overlay"
-            width={atlas.img!.naturalWidth}
-            height={atlas.img!.naturalHeight}
-            bind:this={canvasOverlay}
-        ></canvas>
+    <div class="canvas-wrapper" bind:this={wrapperCanvas}>
+        <canvas bind:this={canvasBase}></canvas>
+        <canvas class="canvas-overlay" bind:this={canvasOverlay}></canvas>
     </div>
     <div class="settings-wrapper">
         <fieldset>
@@ -269,6 +278,7 @@
     .canvas-wrapper {
         position: relative;
         flex-grow: 1;
+        border: 1px solid var(--color-3);
     }
 
     .canvas-overlay {
@@ -278,6 +288,10 @@
     }
 
     input[type="number"] {
-        width: 5em;
+        width: 4em;
+    }
+
+    fieldset {
+        border: 1px solid var(--color-3);
     }
 </style>
