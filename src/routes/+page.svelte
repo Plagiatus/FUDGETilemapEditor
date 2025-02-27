@@ -17,6 +17,7 @@
         });
         mapTab.addEventListener("pointerup", () => {
             atlasTabVisible = false;
+            TileAtlas.selectedTiles = [];
         });
     });
     let map = new TileMap(

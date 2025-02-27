@@ -29,6 +29,7 @@
     let ctxOverlay: CanvasRenderingContext2D;
     let controllerSheet: CanvasController;
     let selectedTile: Tile | undefined = $state();
+    let selectedTilePosition: Vector2 | undefined = $state();
     let drawLines: boolean = $state(true);
     let mousePos: Vector2 = $state({ x: 0, y: 0 });
     let dragging = false;
@@ -81,6 +82,7 @@
             // right mouse
             deleting = false;
         }
+        controllerSheet.draw();
     }
 
     function placeSelectedTilesAtMousePosition() {
@@ -111,10 +113,13 @@
         } else {
             let tile = sheet.getTile(tilePos);
             if (!tile) {
-                tile = TileRenderer.newTile("rule");
+                let tile = $state(TileRenderer.newTile("rule"));
                 sheet.setTile(tile, tilePos);
+                selectedTile = tile;
+            } else {
+                selectedTile = tile;
             }
-            selectedTile = tile;
+            selectedTilePosition = tilePos;
         }
     }
 
@@ -154,35 +159,44 @@
 
     function drawOverlay() {
         const tilePos = getTileLocationFromPos(mousePos);
-        if (!tilePos) return;
-
-        ctxOverlay.imageSmoothingEnabled = false;
-        for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
-            for (
-                let x: number = 0;
-                x < TileAtlas.selectedTiles[y].length;
-                x++
-            ) {
-                if (
-                    tilePos.x + x >= sheet.mapSize.x ||
-                    tilePos.y + y >= sheet.mapSize.y
-                )
-                    continue;
-                const pos: Vector2 = {
-                    x: (tilePos.x + x) * sheet.tileSize.x,
-                    y: (tilePos.y + y) * sheet.tileSize.y,
-                };
-                TileRenderer.drawTile(
-                    TileAtlas.selectedTiles[y][x],
-                    ctxOverlay,
-                    pos,
-                    tileSize,
-                );
+        if (tilePos) {
+            ctxOverlay.imageSmoothingEnabled = false;
+            for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
+                for (
+                    let x: number = 0;
+                    x < TileAtlas.selectedTiles[y].length;
+                    x++
+                ) {
+                    if (
+                        tilePos.x + x >= sheet.mapSize.x ||
+                        tilePos.y + y >= sheet.mapSize.y
+                    )
+                        continue;
+                    const pos: Vector2 = {
+                        x: (tilePos.x + x) * sheet.tileSize.x,
+                        y: (tilePos.y + y) * sheet.tileSize.y,
+                    };
+                    TileRenderer.drawTile(
+                        TileAtlas.selectedTiles[y][x],
+                        ctxOverlay,
+                        pos,
+                        tileSize,
+                    );
+                }
             }
+        }
+        if (selectedTile && selectedTilePosition) {
+            ctxOverlay.fillStyle = "rgba(255, 0, 0, 0.5)";
+            ctxOverlay.fillRect(
+                selectedTilePosition.x * sheet.tileSize.x,
+                selectedTilePosition.y * sheet.tileSize.y,
+                sheet.tileSize.x,
+                sheet.tileSize.y,
+            );
         }
     }
 
-    function setCanvasSize(){
+    function setCanvasSize() {
         canvasSheet.width = wrapperSheet.clientWidth;
         canvasOverlay.width = wrapperSheet.clientWidth;
         canvasSheet.height = wrapperSheet.clientHeight;
@@ -247,7 +261,7 @@
         <!-- <span>Mouse: {mousePos.x.toFixed(0)}, {mousePos.y.toFixed(0)}</span> -->
         <div id="tile-info">
             {#if selectedTile}
-                <TileInfo tile={selectedTile} />
+                <TileInfo bind:tile={selectedTile} />
             {/if}
         </div>
     </div>

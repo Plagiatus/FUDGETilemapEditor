@@ -10,7 +10,7 @@ export interface Vector2 {
 
 export class TileAtlas {
     static existingIDs: Set<string> = new Set();
-    static selectedTiles: Tile[][] = [];
+    static selectedTiles: TileBasic[][] = [];
     #settings: TileImageSettings;
     #id: string;
     #src: string;
@@ -145,6 +145,7 @@ export interface TileRule extends TileBase {
 
 export interface TileRuleRule {
     neighborFilter: TILE_NEIGHBOR_RULE[],
+    tile?: TileBasic,
     random?: TileBasic[]
 }
 
@@ -184,13 +185,28 @@ export class TileSheet {
             for (let x: number = 0; x < this.#mapSize.x; x++) {
                 const tile = this.getTile({ x, y });
                 if (!tile) continue;
-                TileRenderer.drawTile(tile, ctx, { x: this.#tileSize.x * x, y: this.#tileSize.y * y }, this.#tileSize);
+                const pos = { x: this.#tileSize.x * x, y: this.#tileSize.y * y };
+                if (tile.type === "basic") {
+                    TileRenderer.drawTile(tile, ctx, pos, this.#tileSize);
+                }
+                else if (tile.type === "rule") {
+                    TileRenderer.drawTile(tile.default, ctx, pos, this.#tileSize);
+                    this.drawRuleOverlay(ctx, pos, this.#tileSize);
+                }
             }
         }
     }
 
     getTile(pos: Vector2): Tile | undefined {
         return this.#tiles[pos.y]?.[pos.x];
+    }
+
+    private drawRuleOverlay(ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
+        ctx.strokeStyle = "white";
+        ctx.fillStyle = "black";
+        ctx.font = `bold ${size.y * 0.8}px sans-serif`;
+        ctx.strokeText("⚙", pos.x + 1, pos.y + size.y - 1, size.x);
+        ctx.fillText("⚙", pos.x + 1, pos.y + size.y - 1, size.x);
     }
 }
 
@@ -251,6 +267,7 @@ export class TileRenderer {
     }
 
     private static recalculateTileIds() {
+        console.log("recalc");
         let tileNumber = 1;
         const newTileIndex: Map<number, Tile> = new Map();
         for (let atlas of this.atlantes.values()) {
@@ -274,7 +291,8 @@ export class TileRenderer {
     }
 
     public static newTile(type: "rule", name: string = ""): Tile {
-        this.recalculateTileIds();
+        // this.recalculateTileIds();
+        console.log("new tile");
         let id: number = this.tileIndex.size;
         while (this.tileIndex.has(id)) {
             id++;
@@ -314,7 +332,7 @@ export class TileRenderer {
             ctx.fillStyle = "red";
             ctx.textAlign = "center";
             ctx.font = `bold ${size.y * 0.8}px sans-serif`;
-            ctx.fillText("!",pos.x + 0.5 * size.x, pos.y + size.y * 0.8, size.x);
+            ctx.fillText("!", pos.x + 0.5 * size.x, pos.y + size.y * 0.8, size.x);
             console.error(`Atlas "${t.atlasId}" not found.`);
             return;
         }
@@ -332,6 +350,8 @@ export class TileRenderer {
             size.y,
         )
     }
-    protected static drawRuleTile(t: TileRule, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) { }
+    protected static drawRuleTile(t: TileRule, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
+
+    }
     private static Instance = new TileRenderer();
 }
