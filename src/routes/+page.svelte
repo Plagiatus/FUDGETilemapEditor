@@ -97,6 +97,8 @@
         width: 50px;
         padding: 0.5em;
         transition: flex-grow 0.2s ease;
+        display: flex;
+        flex-direction: column;
     }
     .tab.shown {
         flex-grow: 1;
@@ -111,7 +113,7 @@
     .tab-content {
         scale: 1;
         transition: scale 0.2s ease;
-        min-height: 100%;
+        flex-grow: 1;
     }
     .tab:not(.shown) h2 {
         writing-mode: vertical-lr;

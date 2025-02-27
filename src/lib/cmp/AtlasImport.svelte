@@ -3,7 +3,10 @@
     import Atlas from "./Atlas.svelte";
 
     let fileInput: HTMLInputElement;
-    let { atlantes = $bindable([]), activeAtlas = $bindable() }: { atlantes: TileAtlas[], activeAtlas: TileAtlas | undefined } = $props();
+    let {
+        atlantes = $bindable([]),
+        activeAtlas = $bindable(),
+    }: { atlantes: TileAtlas[]; activeAtlas: TileAtlas | undefined } = $props();
 
     async function load(ev: Event) {
         if (!fileInput.files) return;
@@ -14,11 +17,7 @@
                 tileGap: { x: 0, y: 0 },
                 tileSize: { x: 16, y: 16 },
             });
-            const atlas = new TileAtlas(
-                imgData,
-                settings,
-                file.name,
-            );
+            const atlas = new TileAtlas(imgData, settings, file.name);
             await atlas.loadImg();
             atlantes.push(atlas);
             activeAtlas = atlas;
@@ -36,6 +35,18 @@
     function activate(atlas: TileAtlas) {
         activeAtlas = atlas;
     }
+
+    function remove(atlas: TileAtlas) {
+        if (atlas == activeAtlas) {
+            TileAtlas.selectedTiles = [];
+        }
+        let index = atlantes.indexOf(atlas);
+        if (index < 0) return;
+        atlantes.splice(index, 1);
+        while (index >= atlantes.length) index--;
+        if (index < 0) return;
+        activeAtlas = atlantes[index];
+    }
 </script>
 
 <input
@@ -49,7 +60,7 @@
 />
 
 <div id="atlantes-wrapper">
-    {#each atlantes as atlas}
-        <Atlas {atlas} {activate} active={activeAtlas == atlas} />
+    {#each atlantes as atlas (atlas)}
+        <Atlas {atlas} {activate} {remove} active={activeAtlas == atlas} />
     {/each}
 </div>

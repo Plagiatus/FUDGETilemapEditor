@@ -22,6 +22,7 @@
         selectedAtlas,
     }: { sheet: TileSheet | undefined; selectedAtlas: TileAtlas | undefined } =
         $props();
+    let wrapperSheet: HTMLDivElement;
     let canvasSheet: HTMLCanvasElement;
     let canvasOverlay: HTMLCanvasElement;
     let ctxSheet: CanvasRenderingContext2D;
@@ -44,11 +45,7 @@
         controllerSheet.addEventListener("pointerup", pointerup);
         ctxSheet = canvasSheet.getContext("2d")!;
 
-        let rect = canvasSheet.getBoundingClientRect();
-        canvasSheet.width = rect.width;
-        canvasOverlay.width = rect.width;
-        canvasSheet.height = rect.height;
-        canvasOverlay.height = rect.height;
+        setCanvasSize();
         ctxOverlay = canvasOverlay.getContext("2d")!;
         controllerSheet.addCtxToSync(ctxOverlay);
 
@@ -185,7 +182,15 @@
         }
     }
 
+    function setCanvasSize(){
+        canvasSheet.width = wrapperSheet.clientWidth;
+        canvasOverlay.width = wrapperSheet.clientWidth;
+        canvasSheet.height = wrapperSheet.clientHeight;
+        canvasOverlay.height = wrapperSheet.clientHeight;
+    }
+
     function resetView() {
+        setCanvasSize();
         controllerSheet.reset();
     }
 </script>
@@ -234,7 +239,7 @@
             <button onclick={resetView}>reset view</button>
         </fieldset>
     </fieldset>
-    <div id="sheet-canvas-wrapper">
+    <div id="sheet-canvas-wrapper" bind:this={wrapperSheet}>
         <canvas id="sheet-canvas" bind:this={canvasSheet}></canvas>
         <canvas id="overlay-canvas" bind:this={canvasOverlay}></canvas>
     </div>
@@ -252,16 +257,20 @@
     #sheet-wrapper {
         height: 100%;
         width: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     #sheet-canvas-wrapper {
         position: relative;
         border: 2px solid var(--color-3);
+        flex-grow: 1;
     }
 
     #sheet-canvas {
-        height: 100%;
-        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
     }
 
     #overlay-canvas {

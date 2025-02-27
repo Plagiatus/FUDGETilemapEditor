@@ -9,10 +9,12 @@
     let {
         atlas = $bindable(),
         activate,
+        remove,
         active,
     }: {
         atlas: TileAtlas;
         activate: (atlas: TileAtlas) => void;
+        remove: (atlas: TileAtlas) => void;
         active: boolean;
     } = $props();
 
@@ -33,6 +35,7 @@
 
     onMount(() => {
         wrapperAtlas.addEventListener("click", () => {
+            if (active) return;
             activate(atlas);
             updateSelectedTiles();
         });
@@ -50,11 +53,7 @@
         ctxBase = canvasBase.getContext("2d")!;
         controller.addCtxToSync(ctxBase);
 
-        const rect = wrapperCanvas.getBoundingClientRect();
-        canvasBase.width = rect.width;
-        canvasBase.height = rect.height;
-        canvasOverlay.width = rect.width;
-        canvasOverlay.height = rect.height;
+        setCanvasSize();
 
         controller.draw();
     });
@@ -175,6 +174,24 @@
         }
         return;
     }
+
+    function updateTiles() {
+        atlas.createTiles();
+
+        controller.draw();
+    }
+
+    function setCanvasSize() {
+        canvasBase.width = wrapperCanvas.clientWidth;
+        canvasBase.height = wrapperCanvas.clientHeight;
+        canvasOverlay.width = wrapperCanvas.clientWidth;
+        canvasOverlay.height = wrapperCanvas.clientHeight;
+    }
+
+    function resetView() {
+        setCanvasSize();
+        controller.reset();
+    }
 </script>
 
 <fieldset class="atlas-display" class:active bind:this={wrapperAtlas}>
@@ -189,6 +206,7 @@
             <label
                 >width <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.tileSize.x}
                     min="0"
                 /></label
@@ -196,6 +214,7 @@
             <label
                 >height <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.tileSize.y}
                     min="0"
                 /></label
@@ -206,12 +225,14 @@
             <label
                 >width <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.tileGap.x}
                 /></label
             >
             <label
                 >height <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.tileGap.y}
                 /></label
             >
@@ -221,12 +242,14 @@
             <label
                 >width <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.startOffset.x}
                 /></label
             >
             <label
                 >height <input
                     type="number"
+                    oninput={updateTiles}
                     bind:value={atlas.settings.startOffset.y}
                     width="5"
                 /></label
@@ -246,6 +269,11 @@
                     bind:checked={showLines}
                 /></label
             >
+            <button onclick={resetView}>reset view</button>
+        </fieldset>
+        <fieldset>
+            <legend>Danger Zone</legend>
+            <button onclick={()=>{remove(atlas)}}>Remove</button>
         </fieldset>
     </div>
 </fieldset>

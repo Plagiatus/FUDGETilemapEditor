@@ -243,6 +243,7 @@ export class TileRenderer {
         TileRenderer.renderMethod.set("rule", TileRenderer.drawRuleTile);
     }
     public static setAtlantes(atlantes: TileAtlas[]) {
+        this.atlantes.clear();
         for (const atlas of atlantes) {
             this.atlantes.set(atlas.id, atlas);
         }
@@ -309,7 +310,14 @@ export class TileRenderer {
 
     protected static drawBasicTile = (t: TileBasic, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) => {
         const atlas = this.atlantes.get(t.atlasId);
-        if (!atlas) throw new Error(`Atlas "${t.atlasId}" not found.`);
+        if (!atlas) {
+            ctx.fillStyle = "red";
+            ctx.textAlign = "center";
+            ctx.font = `bold ${size.y * 0.8}px sans-serif`;
+            ctx.fillText("!",pos.x + 0.5 * size.x, pos.y + size.y * 0.8, size.x);
+            console.error(`Atlas "${t.atlasId}" not found.`);
+            return;
+        }
         let { x, y, w, h } = atlas.getTilePosition(t.indexInAtlas);
 
         ctx.drawImage(
