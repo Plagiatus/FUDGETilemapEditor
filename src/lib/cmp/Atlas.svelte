@@ -5,6 +5,7 @@
     } from "$lib/CanvasController";
     import { TileAtlas, type TileBasic, type Vector2 } from "$lib/tiles";
     import { onMount } from "svelte";
+    import Vector2Input from "./util/Vector2Input.svelte";
 
     let {
         atlas = $bindable(),
@@ -201,60 +202,9 @@
         <canvas class="canvas-overlay" bind:this={canvasOverlay}></canvas>
     </div>
     <div class="settings-wrapper">
-        <fieldset>
-            <legend>Tile Size</legend>
-            <label
-                >width <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.tileSize.x}
-                    min="0"
-                /></label
-            >
-            <label
-                >height <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.tileSize.y}
-                    min="0"
-                /></label
-            >
-        </fieldset>
-        <fieldset>
-            <legend>Tile Gap</legend>
-            <label
-                >width <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.tileGap.x}
-                /></label
-            >
-            <label
-                >height <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.tileGap.y}
-                /></label
-            >
-        </fieldset>
-        <fieldset>
-            <legend>Offset</legend>
-            <label
-                >width <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.startOffset.x}
-                /></label
-            >
-            <label
-                >height <input
-                    type="number"
-                    oninput={updateTiles}
-                    bind:value={atlas.settings.startOffset.y}
-                    width="5"
-                /></label
-            >
-        </fieldset>
+        <Vector2Input legend="Tile Size" bind:vector={atlas.settings.tileSize} change={updateTiles}/>
+        <Vector2Input legend="Tile Gap" bind:vector={atlas.settings.tileGap} change={updateTiles}/>
+        <Vector2Input legend="Offset" bind:vector={atlas.settings.startOffset} change={updateTiles}/>
         <fieldset>
             <legend>Display Settings</legend>
             <label
@@ -313,10 +263,6 @@
         position: absolute;
         top: 0;
         left: 0;
-    }
-
-    input[type="number"] {
-        width: 4em;
     }
 
     fieldset {

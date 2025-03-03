@@ -120,6 +120,7 @@
             }}>set tile</button
         >
         <div class="tile-rules">
+            Rules
             {#each tile.rules as rule, i (rule)}
                 <div class="tile-rule">
                     <div class="tile-rule-order">
@@ -173,6 +174,9 @@
         padding: 1em;
         background-color: var(--color-2);
         border: 2px solid var(--color-3);
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
     }
 
     .tile-base-info {
@@ -193,6 +197,11 @@
     }
     .tile-preview {
         grid-area: preview;
+    }
+
+    .tile-rules {
+        overflow-y: scroll;
+        flex-grow: 1;
     }
 
     .tile-rule {

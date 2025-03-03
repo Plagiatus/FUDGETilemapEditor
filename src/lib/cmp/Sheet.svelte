@@ -1,11 +1,9 @@
 <script lang="ts">
     import {
         CanvasController,
-        type CanvasControllerEvent,
         type CanvasControllerPointerEvent,
     } from "$lib/CanvasController";
     import {
-        TILE_NEIGHBOR_RULE,
         TileAtlas,
         TileRenderer,
         TileSheet,
@@ -14,6 +12,8 @@
     } from "$lib/tiles";
     import { onMount } from "svelte";
     import TileInfo from "./TileInfo.svelte";
+    import { tryToCreateRuleTile } from "$lib/ruleGenerator";
+    import Vector2Input from "./util/Vector2Input.svelte";
 
     let sheetSize: Vector2 = $state({ x: 20, y: 20 });
     let tileSize: Vector2 = $state({ x: 16, y: 16 });
@@ -69,7 +69,7 @@
             if (tilePos) sheet.setTile(undefined, tilePos);
         }
         if (dragging) {
-            placeSelectedTilesAtMousePosition();
+            checkMousedownAction(ev);
         }
         controllerSheet.draw();
     }
@@ -77,7 +77,7 @@
         if (ev.detail.event.button === 0) {
             // left mouse
             dragging = false;
-            placeSelectedTilesAtMousePosition();
+            checkMousedownAction(ev);
         } else if (ev.detail.event.button === 2) {
             // right mouse
             deleting = false;
@@ -85,32 +85,30 @@
         controllerSheet.draw();
     }
 
-    function placeSelectedTilesAtMousePosition() {
+    function checkMousedownAction(
+        ev: CustomEvent<CanvasControllerPointerEvent>,
+    ) {
         const tilePos = getTileLocationFromPos(mousePos);
         if (!tilePos) {
+            // didn't click on a valid tile position, deselect and return
             selectedTile = undefined;
             return;
         }
+
         if (TileAtlas.selectedTiles.length > 0) {
-            for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
-                for (
-                    let x: number = 0;
-                    x < TileAtlas.selectedTiles[y].length;
-                    x++
-                ) {
-                    if (!TileAtlas.selectedTiles[y][x]) continue;
-                    if (
-                        tilePos.x + x >= sheet.mapSize.x ||
-                        tilePos.y + y >= sheet.mapSize.y
-                    )
-                        continue;
-                    sheet.setTile(TileAtlas.selectedTiles[y][x], {
-                        x: tilePos.x + x,
-                        y: tilePos.y + y,
-                    });
-                }
+            // there are selected tiles to place
+            if (ev.detail.event.shiftKey) {
+                // try to create a rule tile from the selected tiles
+                const newTile = tryToCreateRuleTile(sheet);
+                if (!newTile) return;
+                sheet.setTile(newTile, tilePos);
+                selectedTile = newTile;
+            } else {
+                // place all tiles as selected
+                placeSelectedTiles(tilePos);
             }
         } else {
+            // there aren't selected tiles to place, so select the sheets tiles or create a rule tile
             let tile = sheet.getTile(tilePos);
             if (!tile) {
                 let tile = $state(TileRenderer.newTile("rule"));
@@ -120,6 +118,27 @@
                 selectedTile = tile;
             }
             selectedTilePosition = tilePos;
+        }
+    }
+
+    function placeSelectedTiles(pos: Vector2) {
+        for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
+            for (
+                let x: number = 0;
+                x < TileAtlas.selectedTiles[y].length;
+                x++
+            ) {
+                if (!TileAtlas.selectedTiles[y][x]) continue;
+                if (
+                    pos.x + x >= sheet.mapSize.x ||
+                    pos.y + y >= sheet.mapSize.y
+                )
+                    continue;
+                sheet.setTile(TileAtlas.selectedTiles[y][x], {
+                    x: pos.x + x,
+                    y: pos.y + y,
+                });
+            }
         }
     }
 
@@ -207,44 +226,24 @@
         setCanvasSize();
         controllerSheet.reset();
     }
+
+    function updateSheetSettings() {
+        controllerSheet.draw();
+    }
 </script>
 
 <div id="sheet-wrapper">
     <fieldset>
-        <fieldset>
-            <legend>Tile Size</legend>
-            <label
-                >width<input
-                    type="number"
-                    bind:value={tileSize.x}
-                    min="0"
-                /></label
-            >
-            <label
-                >height<input
-                    type="number"
-                    bind:value={tileSize.y}
-                    min="0"
-                /></label
-            >
-        </fieldset>
-        <fieldset>
-            <legend>Sheet Size</legend>
-            <label
-                >width<input
-                    type="number"
-                    bind:value={sheetSize.x}
-                    min="0"
-                /></label
-            >
-            <label
-                >height<input
-                    type="number"
-                    bind:value={sheetSize.y}
-                    min="0"
-                /></label
-            >
-        </fieldset>
+        <Vector2Input
+            legend="Tile Size"
+            bind:vector={tileSize}
+            change={updateSheetSettings}
+        />
+        <Vector2Input
+            legend="Sheet Size"
+            bind:vector={sheetSize}
+            change={updateSheetSettings}
+        />
         <fieldset>
             <legend>Display Settings</legend>
             <label
@@ -307,7 +306,9 @@
     #tile-info {
         position: absolute;
         right: 0;
+        top: 0;
         pointer-events: all;
+        height: 100%;
     }
 
     fieldset {
