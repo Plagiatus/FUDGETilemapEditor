@@ -10,7 +10,7 @@
         type Vector2,
     } from "$lib/tiles";
     import { onMount } from "svelte";
-    import Atlas from "./Atlas.svelte";
+    import { selectedTilesAtlas } from "$lib/stores";
 
     let { tile = $bindable() }: { tile: Tile } = $props();
 
@@ -37,16 +37,7 @@
 
     function addRule() {
         const newRule: TileRuleRule = $state({
-            neighborFilter: [
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-                TILE_NEIGHBOR_RULE.UNSET,
-            ],
+            neighborFilter: Array(9).fill(TILE_NEIGHBOR_RULE.UNSET),
         });
         (tile as TileRule).rules.push(newRule);
     }
@@ -83,15 +74,15 @@
     }
 
     function setRuleTile(rule: TileRuleRule) {
-        if (TileAtlas.selectedTiles.length <= 0) return;
-        let tile = TileAtlas.selectedTiles[0][0];
+        if ($selectedTilesAtlas.length <= 0) return;
+        let tile = $selectedTilesAtlas[0][0];
         if (!tile) return;
         rule.tile = tile;
     }
     function setRuleTileDefault() {
         if (tile.type !== "rule") return;
-        if (TileAtlas.selectedTiles.length <= 0) return;
-        let tileB = TileAtlas.selectedTiles[0][0];
+        if ($selectedTilesAtlas.length <= 0) return;
+        let tileB = $selectedTilesAtlas[0][0];
         if (!tileB) return;
         tile.default = tileB;
         drawDefaultTile(TileRenderer.drawTile, tile.default);
@@ -158,6 +149,7 @@
                                     filterRule,
                                 )}"
                                 aria-label="change neighbor rule {i}"
+                                disabled={i === Math.floor(rule.neighborFilter.length / 2)}
                             >
                             </button>
                         {/each}
@@ -225,7 +217,7 @@
 
     .tile-neighbors {
         display: grid;
-        grid-template-areas: "b0 b1 b2" "b3 x b4" "b5 b6 b7";
+        grid-template-areas: "b0 b1 b2" "b3 b4 b5" "b6 b7 b8";
         grid-template-columns: repeat(3, 1em);
         grid-template-rows: repeat(3, 1em);
         gap: 1px;
@@ -246,4 +238,10 @@
     /* .tile-rule-button.none {
         background: white;
     } */
+    .tile-rule-button:not(:disabled) {
+        cursor: pointer;
+    }
+    .tile-rule-button:disabled {
+        border: none;
+    }
 </style>

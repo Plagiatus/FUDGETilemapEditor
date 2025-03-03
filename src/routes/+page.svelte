@@ -2,13 +2,15 @@
     import AtlasImport from "$lib/cmp/AtlasImport.svelte";
     import Sheet from "$lib/cmp/Sheet.svelte";
     import TileMapDisplay from "$lib/cmp/TileMapDisplay.svelte";
-    import { TileAtlas, TileMap, TileRenderer, TileSheet } from "$lib/tiles";
+    import { selectedTilesAtlas } from "$lib/stores";
+    import { TileAtlas, TileMap, TileRenderer, TileSheet, type Tile } from "$lib/tiles";
     let atlantes: TileAtlas[] = $state([]);
 
     let atlasTab: HTMLDivElement;
     let atlasTabVisible: boolean = $state(true);
     let mapTab: HTMLDivElement;
     let activeAtlas: TileAtlas | undefined = $state();
+    let selectedTile: Tile | undefined = $state();
     let tileSheet: TileSheet | undefined = $state();
 
     $effect(() => {
@@ -17,19 +19,13 @@
         });
         mapTab.addEventListener("pointerup", () => {
             atlasTabVisible = false;
-            TileAtlas.selectedTiles = [];
+            $selectedTilesAtlas = [];
         });
     });
     let map = new TileMap(
         { x: 5, y: 5 },
         { x: 64, y: 64 },
-        [
-            1, 2, 2, 2, 3,
-            9, 10, 10, 10, 11,
-            9, 10, 10, 10, 11,
-            9, 10, 10, 10, 11,
-            17, 18, 18, 18, 19,
-        ],
+        [],
     );
 
     $effect(()=>{
@@ -64,7 +60,7 @@
         <div class="tab shown" id="tab-sheet">
             <h2>Tile Sheet</h2>
             <div class="tab-content">
-                <Sheet sheet={tileSheet} selectedAtlas={activeAtlas}/>
+                <Sheet sheet={tileSheet}/>
             </div>
         </div>
         <div
@@ -75,7 +71,7 @@
         >
             <h2>Tile Map</h2>
             <div class="tab-content">
-                <TileMapDisplay map={map} />
+                <TileMapDisplay map={map}/>
             </div>
         </div>
     </div>
@@ -121,12 +117,15 @@
     }
 
     #tab-atlas {
+        --color-outline: var(--color-3);
         background-color: var(--color-1);
     }
     #tab-sheet {
+        --color-outline: var(--color-3);
         background-color: var(--color-2);
     }
     #tab-map {
+        --color-outline: var(--color-4);
         background-color: var(--color-3);
     }
     h1 {

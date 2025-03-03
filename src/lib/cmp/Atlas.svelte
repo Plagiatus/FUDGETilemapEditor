@@ -6,6 +6,8 @@
     import { TileAtlas, type TileBasic, type Vector2 } from "$lib/tiles";
     import { onMount } from "svelte";
     import Vector2Input from "./util/Vector2Input.svelte";
+    import { drawGridOverlay, setCanvasSize } from "$lib/util";
+    import { selectedTilesAtlas } from "$lib/stores";
 
     let {
         atlas = $bindable(),
@@ -54,14 +56,14 @@
         ctxBase = canvasBase.getContext("2d")!;
         controller.addCtxToSync(ctxBase);
 
-        setCanvasSize();
+        setCanvasSizes();
 
         controller.draw();
     });
 
     function updateSelectedTiles() {
         if (selectedTiles.size == 0) {
-            TileAtlas.selectedTiles = [];
+            $selectedTilesAtlas = [];
             return controller.draw();
         }
         const tileAmount = atlas.tileAmount;
@@ -77,7 +79,7 @@
             if (max.x < pos.x) max.x = pos.x;
             if (max.y < pos.y) max.y = pos.y;
         });
-        TileAtlas.selectedTiles = Array.from(
+        $selectedTilesAtlas = Array.from(
             { length: max.y - min.y + 1 },
             () => [],
         );
@@ -86,7 +88,7 @@
                 x: (t.indexInAtlas % tileAmount.x) - min.x,
                 y: Math.floor(t.indexInAtlas / tileAmount.x) - min.y,
             };
-            TileAtlas.selectedTiles[pos.y][pos.x] = t;
+            $selectedTilesAtlas[pos.y][pos.x] = t;
         });
 
         controller.draw();
@@ -182,15 +184,13 @@
         controller.draw();
     }
 
-    function setCanvasSize() {
-        canvasBase.width = wrapperCanvas.clientWidth;
-        canvasBase.height = wrapperCanvas.clientHeight;
-        canvasOverlay.width = wrapperCanvas.clientWidth;
-        canvasOverlay.height = wrapperCanvas.clientHeight;
+    function setCanvasSizes() {
+        setCanvasSize(canvasBase, wrapperCanvas);
+        setCanvasSize(canvasOverlay, wrapperCanvas);
     }
 
     function resetView() {
-        setCanvasSize();
+        setCanvasSizes();
         controller.reset();
     }
 </script>

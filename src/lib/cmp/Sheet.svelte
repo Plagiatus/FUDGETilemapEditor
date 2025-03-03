@@ -12,23 +12,23 @@
     } from "$lib/tiles";
     import { onMount } from "svelte";
     import TileInfo from "./TileInfo.svelte";
-    import { tryToCreateRuleTile } from "$lib/ruleGenerator";
+    import { tryToCreateRuleTile } from "$lib/ruleGenerator.svelte";
     import Vector2Input from "./util/Vector2Input.svelte";
+    import { drawGridOverlay, setCanvasSize } from "$lib/util";
+    import { selectedTileSheet, selectedTilesAtlas } from "$lib/stores";
 
     let sheetSize: Vector2 = $state({ x: 20, y: 20 });
     let tileSize: Vector2 = $state({ x: 16, y: 16 });
     let {
-        sheet = $bindable(new TileSheet(sheetSize, tileSize)),
-        selectedAtlas,
-    }: { sheet: TileSheet | undefined; selectedAtlas: TileAtlas | undefined } =
-        $props();
+        // svelte-ignore state_referenced_locally
+                sheet = $bindable(new TileSheet(sheetSize, tileSize)),
+    }: { sheet: TileSheet | undefined } = $props();
     let wrapperSheet: HTMLDivElement;
     let canvasSheet: HTMLCanvasElement;
     let canvasOverlay: HTMLCanvasElement;
     let ctxSheet: CanvasRenderingContext2D;
     let ctxOverlay: CanvasRenderingContext2D;
     let controllerSheet: CanvasController;
-    let selectedTile: Tile | undefined = $state();
     let selectedTilePosition: Vector2 | undefined = $state();
     let drawLines: boolean = $state(true);
     let mousePos: Vector2 = $state({ x: 0, y: 0 });
@@ -46,7 +46,7 @@
         controllerSheet.addEventListener("pointerup", pointerup);
         ctxSheet = canvasSheet.getContext("2d")!;
 
-        setCanvasSize();
+        setCanvasSizes();
         ctxOverlay = canvasOverlay.getContext("2d")!;
         controllerSheet.addCtxToSync(ctxOverlay);
 
@@ -91,18 +91,18 @@
         const tilePos = getTileLocationFromPos(mousePos);
         if (!tilePos) {
             // didn't click on a valid tile position, deselect and return
-            selectedTile = undefined;
+            $selectedTileSheet = undefined;
             return;
         }
 
-        if (TileAtlas.selectedTiles.length > 0) {
+        if ($selectedTilesAtlas.length > 0) {
             // there are selected tiles to place
             if (ev.detail.event.shiftKey) {
                 // try to create a rule tile from the selected tiles
-                const newTile = tryToCreateRuleTile(sheet);
+                const newTile = tryToCreateRuleTile();
                 if (!newTile) return;
                 sheet.setTile(newTile, tilePos);
-                selectedTile = newTile;
+                $selectedTileSheet = newTile;
             } else {
                 // place all tiles as selected
                 placeSelectedTiles(tilePos);
@@ -113,28 +113,28 @@
             if (!tile) {
                 let tile = $state(TileRenderer.newTile("rule"));
                 sheet.setTile(tile, tilePos);
-                selectedTile = tile;
+                $selectedTileSheet = tile;
             } else {
-                selectedTile = tile;
+                $selectedTileSheet = tile;
             }
             selectedTilePosition = tilePos;
         }
     }
 
     function placeSelectedTiles(pos: Vector2) {
-        for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
+        for (let y: number = 0; y < $selectedTilesAtlas.length; y++) {
             for (
                 let x: number = 0;
-                x < TileAtlas.selectedTiles[y].length;
+                x < $selectedTilesAtlas[y].length;
                 x++
             ) {
-                if (!TileAtlas.selectedTiles[y][x]) continue;
+                if (!$selectedTilesAtlas[y][x]) continue;
                 if (
                     pos.x + x >= sheet.mapSize.x ||
                     pos.y + y >= sheet.mapSize.y
                 )
                     continue;
-                sheet.setTile(TileAtlas.selectedTiles[y][x], {
+                sheet.setTile($selectedTilesAtlas[y][x], {
                     x: pos.x + x,
                     y: pos.y + y,
                 });
@@ -156,22 +156,9 @@
 
     function draw() {
         sheet.render(ctxSheet);
-        ctxSheet.strokeStyle = "rgba(0, 0, 0, 1)";
-        ctxSheet.lineWidth = 1;
-        const path = new Path2D();
-        for (let y: number = 0; y < sheetSize.y; y++) {
-            for (let x: number = 0; x < sheetSize.x; x++) {
-                path.moveTo(x * tileSize.x, y * tileSize.y + tileSize.y);
-                path.lineTo(x * tileSize.x, y * tileSize.y);
-                path.lineTo(x * tileSize.x + tileSize.x, y * tileSize.y);
-            }
-        }
-        path.moveTo(0, sheetSize.y * tileSize.y);
-        path.lineTo(sheetSize.x * tileSize.x, sheetSize.y * tileSize.y);
-        path.lineTo(sheetSize.x * tileSize.x, 0);
 
         if (drawLines) {
-            ctxSheet.stroke(path);
+            drawGridOverlay(ctxSheet, { tileSize, tileAmount: sheetSize });
         }
         drawOverlay();
     }
@@ -180,10 +167,10 @@
         const tilePos = getTileLocationFromPos(mousePos);
         if (tilePos) {
             ctxOverlay.imageSmoothingEnabled = false;
-            for (let y: number = 0; y < TileAtlas.selectedTiles.length; y++) {
+            for (let y: number = 0; y < $selectedTilesAtlas.length; y++) {
                 for (
                     let x: number = 0;
-                    x < TileAtlas.selectedTiles[y].length;
+                    x < $selectedTilesAtlas[y].length;
                     x++
                 ) {
                     if (
@@ -196,7 +183,7 @@
                         y: (tilePos.y + y) * sheet.tileSize.y,
                     };
                     TileRenderer.drawTile(
-                        TileAtlas.selectedTiles[y][x],
+                        $selectedTilesAtlas[y][x],
                         ctxOverlay,
                         pos,
                         tileSize,
@@ -204,7 +191,7 @@
                 }
             }
         }
-        if (selectedTile && selectedTilePosition) {
+        if ($selectedTileSheet && selectedTilePosition) {
             ctxOverlay.fillStyle = "rgba(255, 0, 0, 0.5)";
             ctxOverlay.fillRect(
                 selectedTilePosition.x * sheet.tileSize.x,
@@ -215,15 +202,13 @@
         }
     }
 
-    function setCanvasSize() {
-        canvasSheet.width = wrapperSheet.clientWidth;
-        canvasOverlay.width = wrapperSheet.clientWidth;
-        canvasSheet.height = wrapperSheet.clientHeight;
-        canvasOverlay.height = wrapperSheet.clientHeight;
+    function setCanvasSizes() {
+        setCanvasSize(canvasOverlay, wrapperSheet);
+        setCanvasSize(canvasSheet, wrapperSheet);
     }
 
     function resetView() {
-        setCanvasSize();
+        setCanvasSizes();
         controllerSheet.reset();
     }
 
@@ -259,8 +244,8 @@
     <div id="tile-info-wrapper">
         <!-- <span>Mouse: {mousePos.x.toFixed(0)}, {mousePos.y.toFixed(0)}</span> -->
         <div id="tile-info">
-            {#if selectedTile}
-                <TileInfo bind:tile={selectedTile} />
+            {#if $selectedTileSheet}
+                <TileInfo bind:tile={$selectedTileSheet} />
             {/if}
         </div>
     </div>
@@ -276,8 +261,9 @@
 
     #sheet-canvas-wrapper {
         position: relative;
-        border: 2px solid var(--color-3);
+        border: 1px solid var(--color-outline);
         flex-grow: 1;
+        margin-top: 1px;
     }
 
     #sheet-canvas {
@@ -312,6 +298,6 @@
     }
 
     fieldset {
-        border: 2px solid var(--color-3);
+        border: 1px solid var(--color-outline);
     }
 </style>

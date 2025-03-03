@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { selectedTilesAtlas } from "$lib/stores";
     import { TileAtlas } from "$lib/tiles";
     import Atlas from "./Atlas.svelte";
 
@@ -38,7 +39,7 @@
 
     function remove(atlas: TileAtlas) {
         if (atlas == activeAtlas) {
-            TileAtlas.selectedTiles = [];
+            $selectedTilesAtlas = [];
         }
         let index = atlantes.indexOf(atlas);
         if (index < 0) return;

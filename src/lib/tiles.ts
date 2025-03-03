@@ -10,7 +10,6 @@ export interface Vector2 {
 
 export class TileAtlas {
     static existingIDs: Set<string> = new Set();
-    static selectedTiles: TileBasic[][] = [];
     #settings: TileImageSettings;
     #id: string;
     #src: string;
@@ -231,9 +230,12 @@ export class TileMap {
         ctx.imageSmoothingEnabled = false;
         for (let col: number = 0; col < this.#mapSize.x; col++) {
             for (let row: number = 0; row < this.#mapSize.y; row++) {
-                const tile = this.getTile(col, row);
+                let tile = this.getTile(col, row);
                 if (!tile) continue;
-                TileRenderer.drawTile(tile, ctx, { x: this.#tileSize.x * col, y: this.#tileSize.y * col }, this.#tileSize);
+                if (tile.type === "rule") {
+                    tile = this.getTileToDrawFromRuleTile(tile, { x: col, y: row })
+                }
+                TileRenderer.drawTile(tile, ctx, { x: this.#tileSize.x * col, y: this.#tileSize.y * row }, this.#tileSize);
             }
 
         }
@@ -246,6 +248,41 @@ export class TileMap {
     setTile(column: number, row: number, tile: Tile) {
         this.#tiles[row * this.#mapSize.x + column] = tile;
     }
+
+    reset(){
+        this.#tiles = [];
+    }
+
+    set tileSize(tileSize: Vector2) {
+        this.#tileSize = tileSize;
+    }
+    set mapSize(mapSize: Vector2) {
+        this.#mapSize = mapSize;
+    }
+
+    protected getTileToDrawFromRuleTile(t: TileRule, pos: Vector2): TileBasic {
+        outer: for (let rule of t.rules) {
+            const ruleLength = Math.sqrt(rule.neighborFilter.length);
+            const ruleLengthHalf = Math.floor(ruleLength / 2);
+            for (let y: number = 0; y < ruleLength; y++) {
+                for (let x: number = 0; x < ruleLength; x++) {
+                    let ruleCompliant = this.checkRule(rule.neighborFilter[y * ruleLength + x], { x: pos.x + x - ruleLengthHalf, y: pos.y + y - ruleLengthHalf }, t.id);
+                    if (!ruleCompliant) continue outer;
+                }
+            }
+            return rule.tile!;
+        }
+
+        return t.default;
+
+    }
+    protected checkRule(rule: TILE_NEIGHBOR_RULE, pos: Vector2, id: number): boolean {
+        if (rule === TILE_NEIGHBOR_RULE.UNSET) return true;
+        const neighbor = this.getTile(pos.x, pos.y);
+        if (rule === TILE_NEIGHBOR_RULE.SAME && neighbor && neighbor.id === id) return true;
+        if (rule === TILE_NEIGHBOR_RULE.DIFFERENT && (!neighbor || neighbor.id !== id)) return true;
+        return false;
+    }
 }
 
 export class TileRenderer {
@@ -256,7 +293,6 @@ export class TileRenderer {
     private constructor() {
         if (TileRenderer.Instance) return TileRenderer.Instance;
         TileRenderer.renderMethod.set("basic", TileRenderer.drawBasicTile);
-        TileRenderer.renderMethod.set("rule", TileRenderer.drawRuleTile);
     }
     public static setAtlantes(atlantes: TileAtlas[]) {
         this.atlantes.clear();
@@ -267,7 +303,6 @@ export class TileRenderer {
     }
 
     private static recalculateTileIds() {
-        console.log("recalc");
         let tileNumber = 1;
         const newTileIndex: Map<number, Tile> = new Map();
         for (let atlas of this.atlantes.values()) {
@@ -314,16 +349,9 @@ export class TileRenderer {
         return this.tileIndex.get(id);
     }
 
-    public static drawTile(t: Tile | number, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
-        if (typeof t === "number") {
-            t = this.tileIndex.get(t)!;
-        }
+    public static drawTile = (t: TileBasic, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) => {
         if (!t) return;
-
-        if (!TileRenderer.renderMethod.has(t.type)) {
-            throw new Error(`Cannot draw tile type "${t.type}": No known renderer.`);
-        }
-        TileRenderer.renderMethod.get(t.type)?.(t, ctx, pos, size);
+        this.drawBasicTile(t, ctx, pos, size);
     }
 
     protected static drawBasicTile = (t: TileBasic, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) => {
@@ -350,8 +378,6 @@ export class TileRenderer {
             size.y,
         )
     }
-    protected static drawRuleTile(t: TileRule, ctx: CanvasRenderingContext2D, pos: Vector2, size: Vector2) {
 
-    }
     private static Instance = new TileRenderer();
 }

@@ -29,4 +29,7 @@
     input[type="number"] {
         width: 4em;
     }
+    fieldset {
+        border: 1px solid var(--color-outline);
+    }
 </style>
