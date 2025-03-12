@@ -3,7 +3,7 @@
     import Sheet from "$lib/cmp/Sheet.svelte";
     import TileMapDisplay from "$lib/cmp/TileMapDisplay.svelte";
     import { selectedTilesAtlas } from "$lib/stores";
-    import { TileAtlas, TileMap, TileRenderer, TileSheet, type Tile } from "$lib/tiles";
+    import { TileAtlas, TileMap, TileSheet, type Tile } from "$lib/tiles";
     let atlantes: TileAtlas[] = $state([]);
 
     let atlasTab: HTMLDivElement;
@@ -29,7 +29,7 @@
     );
 
     $effect(()=>{
-        TileRenderer.setAtlantes(atlantes);
+        TileMap.setAtlantes(atlantes);
     })
 </script>
 

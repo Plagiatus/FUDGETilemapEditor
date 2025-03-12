@@ -1,4 +1,4 @@
-import { TILE_NEIGHBOR_RULE, TileRenderer, type TileBasic, type TileRule, type TileRuleRule, type TileSheet, type Vector2 } from "./tiles";
+import { TILE_NEIGHBOR_RULE, TileMap, type TileBasic, type TileRule, type TileRuleRule, type TileSheet, type Vector2 } from "./tiles";
 import { selectedTilesAtlas } from "$lib/stores";
 import { get } from "svelte/store";
 
@@ -10,7 +10,7 @@ export function tryToCreateRuleTile(): TileRule | undefined {
     const tiles = get(selectedTilesAtlas);
     if (checkPresetTileset(20)) {
         // 4x4 + 4 tileset
-        let rule = TileRenderer.newTile("rule") as TileRule;
+        let rule = TileMap.createTile("rule") as TileRule;
         rule.default = tiles[1][1];
         let rules = $state(get20Rules(tiles));
         rule.rules = rules;
@@ -18,14 +18,14 @@ export function tryToCreateRuleTile(): TileRule | undefined {
     }
     else if (checkPresetTileset(16)) {
         // 4x4 tileset
-        let rule = TileRenderer.newTile("rule") as TileRule;
+        let rule = TileMap.createTile("rule") as TileRule;
         rule.default = tiles[1][1];
         let rules = $state(get16Rules(tiles));
         rule.rules = rules;
         return rule;
     } else if (checkPresetTileset(9)) {
         // 3x3 tileset
-        let rule = TileRenderer.newTile("rule") as TileRule;
+        let rule = TileMap.createTile("rule") as TileRule;
         rule.default = tiles[1][1];
         let rules = $state(get9Rules(tiles));
         rule.rules = rules;

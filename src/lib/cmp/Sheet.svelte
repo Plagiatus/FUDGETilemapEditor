@@ -5,7 +5,7 @@
     } from "$lib/CanvasController";
     import {
         TileAtlas,
-        TileRenderer,
+        TileMap,
         TileSheet,
         type Tile,
         type Vector2,
@@ -111,7 +111,7 @@
             // there aren't selected tiles to place, so select the sheets tiles or create a rule tile
             let tile = sheet.getTile(tilePos);
             if (!tile) {
-                let tile = $state(TileRenderer.newTile("rule"));
+                let tile = $state(TileMap.createTile("rule"));
                 sheet.setTile(tile, tilePos);
                 $selectedTileSheet = tile;
             } else {
@@ -182,7 +182,7 @@
                         x: (tilePos.x + x) * sheet.tileSize.x,
                         y: (tilePos.y + y) * sheet.tileSize.y,
                     };
-                    TileRenderer.drawTile(
+                    TileMap.drawTile(
                         $selectedTilesAtlas[y][x],
                         ctxOverlay,
                         pos,

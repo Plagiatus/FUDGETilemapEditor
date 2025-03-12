@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Tile, TileMap, Vector2 } from "$lib/tiles";
+    import { TileMap, type Tile, type Vector2 } from "$lib/tiles";
     import { onMount } from "svelte";
     import Vector2Input from "./util/Vector2Input.svelte";
     import {
@@ -34,12 +34,12 @@
             if (!$selectedTileSheet) return;
             const tilePos = getTileLocationFromPos(ev.detail.pos);
             if (!tilePos) return;
-            map.setTile(tilePos.x, tilePos.y, $selectedTileSheet);
+            map.setTileAt(tilePos.x, tilePos.y, $selectedTileSheet);
         }
         else if (ev.detail.event.button === 2) {
             const tilePos = getTileLocationFromPos(ev.detail.pos);
             if (!tilePos) return;
-            map.setTile(tilePos.x, tilePos.y, undefined!);
+            map.setTileAt(tilePos.x, tilePos.y, undefined!);
         }
         controller.draw();
     }
@@ -78,6 +78,20 @@
 
     function resetMap(){
         map.reset();
+        controller.draw();
+    }
+
+    async function exportMap(){
+        const serialized = JSON.stringify(map.serialize());
+        await navigator.clipboard.writeText(serialized);
+    }
+
+    async function importMap(){
+        let text = await navigator.clipboard.readText();
+        let newMap = await TileMap.deserialize(JSON.parse(text));
+        console.log(newMap);
+        map = newMap;
+        controller.draw();
     }
 </script>
 
@@ -100,6 +114,8 @@
             </label>
             <button onclick={resetView}>reset view</button>
             <button onclick={resetMap}>reset map</button>
+            <button onclick={exportMap}>export map</button>
+            <button onclick={importMap}>import map</button>
         </fieldset>
     </div>
     <div id="map-display-canvas-wrapper" bind:this={wrapper}>

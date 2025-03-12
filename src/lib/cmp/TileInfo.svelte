@@ -2,7 +2,7 @@
     import {
         TILE_NEIGHBOR_RULE,
         TileAtlas,
-        TileRenderer,
+        TileMap,
         type Tile,
         type TileBasic,
         type TileRule,
@@ -23,9 +23,9 @@
         ctxPreview.clearRect(0, 0, canvasPreview.width, canvasPreview.height);
     });
     $effect(() => {
-        if (tile.type === "basic") drawDefaultTile(TileRenderer.drawTile, tile);
+        if (tile.type === "basic") drawDefaultTile(TileMap.drawTile, tile);
         else if (tile.type === "rule")
-            drawDefaultTile(TileRenderer.drawTile, tile.default);
+            drawDefaultTile(TileMap.drawTile, tile.default);
     });
 
     function drawDefaultTile(drawFunction: Function, tile: Tile) {
@@ -62,7 +62,7 @@
 
     function backgroundStyle(tile: TileBasic | undefined): string {
         if (!tile) return "";
-        let atlas = TileRenderer.atlantes.get(tile.atlasId);
+        let atlas = TileMap.getAtlas(tile.atlasId);
         if (!atlas) return "";
         let pos = atlas.getTilePosition(tile.indexInAtlas);
         let factor: Vector2 = {
@@ -85,7 +85,7 @@
         let tileB = $selectedTilesAtlas[0][0];
         if (!tileB) return;
         tile.default = tileB;
-        drawDefaultTile(TileRenderer.drawTile, tile.default);
+        drawDefaultTile(TileMap.drawTile, tile.default);
     }
 </script>
 
